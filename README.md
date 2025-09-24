@@ -22,7 +22,7 @@ This project demonstrates handling environment variables securely with `.env` an
 
 ## 📂 Project Structure
 
-```
+
 chat_system/
 │
 ├── .env                # Environment variables (ignored by git)
@@ -34,9 +34,8 @@ chat_system/
 │   └── chat.html       # Example: chat.html, styles.css, script.js
 ├── README.md           # Project documentation
 └── server.js           # Main Node.js backend server
-````
 
----
+'''
 
 ## ⚙️ Installation & Setup
 
