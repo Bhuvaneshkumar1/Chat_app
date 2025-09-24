@@ -201,10 +201,28 @@ io.on("connection", async (socket) => {
 // =======================
 // Start Server
 // =======================
+
+
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return '127.0.0.1';
+}
+
+const IP_ADDRESS = getLocalIP();
+console.log(`Local IP Address: ${IP_ADDRESS}`);
+
+
 const PORT = process.env.PORT;
-server.listen(PORT, "192.168.1.246", () => {
+server.listen(PORT, IP_ADDRESS, () => {
   console.log(`Server running on port ${PORT}`);
 
   const service = bonjour().publish({ name: 'MyChatServer', type: 'http', port: PORT });
-  console.log(`Access the server at http://${os.hostname()}.local:${PORT}`);
+  console.log(`Access the server at http://${IP_ADDRESS}:${PORT}`);
 });
