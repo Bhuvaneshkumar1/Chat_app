@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chat App</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+:root {
+  --bg-color: #f4f4f4;
+  --text-color: #333;
+  --user-bg: #0d6efd;
+  --agent-bg: #e4e6eb;
+  --typing-bg: #f0f0f0;
+  --shadow-color: rgba(0,0,0,0.1);
+}
+body.dark {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --user-bg: #2563eb;
+  --agent-bg: #2a2a2a;
+  --typing-bg: #2a2a2a;
+  --shadow-color: rgba(0,0,0,0.5);
+}
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s;
+}
+h2 { text-align: center; margin: 0 0 10px 0; }
+#topBar { width: 100%; max-width: 900px; display: flex; justify-content: flex-end; margin-bottom: 10px; }
+#modeToggle { padding: 6px 12px; cursor: pointer; border: none; border-radius: 20px; background: #0d6efd; color: #fff; font-weight: bold; transition: 0.3s; }
+#modeToggle:hover { background: #0b5ed7; }
+#chat-main { width: 100%; max-width: 900px; display: flex; flex-direction: column; }
+#messages { list-style: none; padding: 10px; max-height: 70vh; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; }
+#messages li {
+  margin: 5px 0;
+  padding: 12px 16px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
+  white-space: pre-line;
+  line-height: 1.4;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  animation: fadeIn 0.2s ease-in;
+}
+.user-msg {
+  background: var(--user-bg);
+  color: #fff;
+  align-self: flex-end;
+  margin-left: 30%;
+  margin-right: 0;
+}
+.ai-msg {
+  background: var(--agent-bg);
+  color: var(--text-color);
+  align-self: flex-start;
+  margin-right: 30%;
+  margin-left: 0;
+}
+.typing-msg {
+  background-color: var(--typing-bg);
+  font-style: italic;
+  align-self: flex-start;
+  margin-right: 30%;
+  margin-left: 0;
+}
+#inputArea { display: flex; width: 100%; margin-top: 10px; align-items: center; }
+#usernameDisplay { margin-right: 10px; font-weight: bold; }
+#msg { flex: 1; padding: 12px; font-size: 16px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+button { padding: 12px 20px; margin-left: 5px; font-size: 16px; cursor: pointer; border-radius: 20px; border: none; transition: 0.3s; }
+#sendBtn { background-color: #0d6efd; color: #fff; }
+#sendBtn:hover { background-color: #0b5ed7; }
+#buttonRow { display: flex; gap: 10px; margin-top: 5px; width: 100%; }
+#newChatBtn, #deleteChatBtn { flex: 1; color: #fff; }
+#newChatBtn { background-color: #6c757d; }
+#deleteChatBtn { background-color: #dc3545; }
+@media screen and (max-width: 480px) {
+  #messages li { max-width: 90%; }
+  button { font-size: 14px; padding: 8px; }
+}
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+</style>
+</head>
+<body>
+<div id="topBar">
+  <button id="modeToggle">🌙</button>
+</div>
+<h2>AI Chat App</h2>
+<div id="chat-main">
+  <ul id="messages"></ul>
+  <div id="inputArea">
+    <span id="usernameDisplay">You</span>
+    <input id="msg" placeholder="Type a message" autofocus autocomplete="off">
+    <button id="sendBtn">Send</button>
+  </div>
+  <div id="buttonRow">
+    <button id="newChatBtn">New Chat</button>
+    <button id="deleteChatBtn">Delete Chat</button>
+  </div>
+</div>
+
+<script>
+const socket = io("http://192.168.1.246:3000"); // Replace with your LAN IP
+const messagesUl = document.getElementById("messages");
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("sendBtn");
+const newChatBtn = document.getElementById("newChatBtn");
+const deleteChatBtn = document.getElementById("deleteChatBtn");
+const modeToggle = document.getElementById("modeToggle");
+const usernameDisplay = document.getElementById("usernameDisplay");
+
+let typingLi = null;
+let darkMode = false;
+let myUsername = "user"; // fallback
+
+// Assign persistent username from server
+socket.on("assignUsername", (name) => {
+  myUsername = name;
+  usernameDisplay.textContent = myUsername;
+});
+
+// Toggle dark/light mode with icons
+modeToggle.addEventListener("click", () => {
+  darkMode = !darkMode;
+  document.body.classList.toggle("dark", darkMode);
+  modeToggle.textContent = darkMode ? "☀️" : "🌙";
+});
+
+// Display chat history from server
+socket.on("chatHistory", (msgs) => {
+  messagesUl.innerHTML = '';
+  msgs.forEach(msg => addMessage(msg));
+});
+
+// Display new messages
+socket.on("receiveMessage", (msg) => {
+  if (typingLi) { messagesUl.removeChild(typingLi); typingLi = null; }
+  addMessage(msg);
+});
+
+// AI typing indicator
+socket.on("aiTyping", (data) => {
+  if (data.status) {
+    typingLi = document.createElement("li");
+    typingLi.textContent = `AI Agent is typing...`;
+    typingLi.classList.add("typing-msg");
+    messagesUl.appendChild(typingLi);
+    messagesUl.scrollTop = messagesUl.scrollHeight;
+  } else if (typingLi) {
+    messagesUl.removeChild(typingLi);
+    typingLi = null;
+  }
+});
+
+// Add message to UI
+function addMessage(msg) {
+  const li = document.createElement("li");
+  li.textContent = `${msg.user.name}: ${msg.text}`;
+  li.classList.add(msg.user.name.toLowerCase().includes("ai") ? "ai-msg" : "user-msg");
+  messagesUl.appendChild(li);
+  messagesUl.scrollTop = messagesUl.scrollHeight;
+}
+
+// Send message
+function sendMsg() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  const msg = {
+    text,
+    user: { _id: myUsername, name: myUsername }
+  };
+  socket.emit("sendMessage", msg);
+  msgInput.value = '';
+}
+
+sendBtn.addEventListener("click", sendMsg);
+
+// Shift+Enter = new line, Enter alone = send
+msgInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMsg();
+  }
+});
+
+// New Chat
+newChatBtn.addEventListener("click", () => {
+  messagesUl.innerHTML = '';
+  socket.emit("newChat");
+});
+
+// Delete current session
+deleteChatBtn.addEventListener("click", () => {
+  fetch("/delete-chat", { method: "POST" }).then(() => messagesUl.innerHTML = '');
+});
+
+// Clear chat from server
+socket.on("clearChat", () => {
+  messagesUl.innerHTML = '';
+});
+</script>
+</body>
+</html>
