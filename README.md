@@ -15,6 +15,7 @@ This project demonstrates handling environment variables securely with `.env` an
 
 ---
 
+---
 ## 📂 Project Structure
 
 
@@ -29,13 +30,13 @@ chat_system/
 │   └── chat.html       # Example: chat.html, styles.css, script.js
 ├── README.md           # Project documentation
 └── server.js           # Main Node.js backend server
-
+---
 
 ## ⚙️ Installation & Setup
 
 ### 1️⃣ Clone the repo
 ```bash
-git clone [https://github.com/your-username/chatbot-app.git](https://github.com/Bhuvaneshkumar1/Chat_app.git)
+git clone https://github.com/Bhuvaneshkumar1/Chat_app.git
 cd chat_system
 ````
 
