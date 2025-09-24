@@ -106,7 +106,7 @@ button { padding: 12px 20px; margin-left: 5px; font-size: 16px; cursor: pointer;
 </div>
 
 <script>
-const socket = io("http://192.168.1.246:3000"); // Replace with your LAN IP
+const socket = io(); // Replace with your LAN IP
 const messagesUl = document.getElementById("messages");
 const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("sendBtn");
