@@ -105,7 +105,7 @@ If you have suggestions, feel free to fork this repo, open an issue, or submit a
 
 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. 
 
 ⭐ Acknowledgements
 
